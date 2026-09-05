@@ -272,7 +272,7 @@ Ollama, if you want to use Drei
 
 Clone the repository:
 
-git clone https://github.com/YOUR-USERNAME/DreiTrack.git
+git clone https://github.com/luismacariola698-png/DreiTrack.git
 cd DreiTrack
 
 Option 1 — Windows Setup Helper
