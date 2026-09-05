@@ -1,0 +1,37 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local databases
+dreitrack.db
+*.db
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+.dreitrack_session_secret
+
+# Editors
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Runtime files
+*.log
+*.tmp
+logs/
+
+# Local migration / development artifacts
+*_scan.txt
+*_before_assets_*.db
+*_before_multicompany_*.db
+*_pretest*.db

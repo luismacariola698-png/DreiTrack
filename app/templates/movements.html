@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Stock In / Out | DreiTrack{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Stock In / Out</h2>
+        <p>Record location-aware inventory movements for {{ request.state.organization.name }}.</p>
+    </div>
+</div>
+
+{% if request.state.user.role in ['ADMIN', 'MANAGER', 'STAFF'] %}
+<div class="two-column-grid">
+    <section class="card form-card">
+        <p class="section-label">STOCK IN</p>
+        <h3>Receive / Return Inventory</h3>
+        <form method="post" action="/movements/in" class="stack-form compact-form">
+            <label>Item</label>
+            <select name="item_id" required>{% for item in items %}<option value="{{ item.id }}">{{ item.sku }} - {{ item.name }}</option>{% endfor %}</select>
+            <label>Storage Location</label>
+            <select name="storage_location_id" required>{% for location in storage_locations %}<option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>{% endfor %}</select>
+            <label>Quantity</label><input type="number" name="quantity" min="1" required>
+            <label>Stock In Type</label>
+            <select name="reason" required>
+                <option value="New Supplier Delivery">New Supplier Delivery</option>
+                <option value="Return to Storage">Return to Storage</option>
+                <option value="Replacement From Supplier">Replacement From Supplier</option>
+                <option value="Transfer Back">Transfer Back</option>
+                <option value="Audit Correction">Audit Correction</option>
+                <option value="Other">Other</option>
+            </select>
+            <label>Asset (optional)</label>
+            <select name="asset_id"><option value="">No specific asset</option>{% for asset in assets %}<option value="{{ asset.id }}">{{ asset.code }}{% if asset.name %} - {{ asset.name }}{% endif %}</option>{% endfor %}</select>
+            <label>Reference</label><input type="text" name="reference" placeholder="PO-001 / JOB-001">
+            <button type="submit">Record Stock In</button>
+            <p class="muted-text">Recorded by {{ request.state.user.display_name }}.</p>
+        </form>
+    </section>
+
+    <section class="card form-card">
+        <p class="section-label">STOCK OUT</p>
+        <h3>Issue Inventory</h3>
+        <form method="post" action="/movements/out" class="stack-form compact-form">
+            <label>Item</label>
+            <select name="item_id" required>{% for item in items %}<option value="{{ item.id }}">{{ item.sku }} - {{ item.name }}</option>{% endfor %}</select>
+            <label>Storage Location</label>
+            <select name="storage_location_id" required>{% for location in storage_locations %}<option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>{% endfor %}</select>
+            <label>Quantity</label><input type="number" name="quantity" min="1" required>
+            <label>Reason</label><input type="text" name="reason" placeholder="Maintenance / project use / testing" required>
+            <label>Asset (optional)</label>
+            <select name="asset_id"><option value="">No specific asset</option>{% for asset in assets %}<option value="{{ asset.id }}">{{ asset.code }}{% if asset.name %} - {{ asset.name }}{% endif %}</option>{% endfor %}</select>
+            <label>Reference</label><input type="text" name="reference" placeholder="REQ-001 / JOB-001">
+            <button type="submit">Record Stock Out</button>
+            <p class="muted-text">Recorded by {{ request.state.user.display_name }}.</p>
+        </form>
+    </section>
+</div>
+{% endif %}
+
+{% if request.state.user.role in ['ADMIN', 'MANAGER', 'STAFF'] %}
+<section class="card form-card">
+    <p class="section-label">INTERNAL TRANSFER</p>
+    <h3>Move Stock Between Locations</h3>
+    <p>Creates a matched OUT and IN pair under one transfer reference, so organization-wide stock does not change.</p>
+    <form method="post" action="/movements/transfer" class="form-grid">
+        <div><label>Item</label><select name="item_id" required>{% for item in items %}<option value="{{ item.id }}">{{ item.sku }} - {{ item.name }}</option>{% endfor %}</select></div>
+        <div><label>From Location</label><select name="from_storage_location_id" required>{% for location in storage_locations %}<option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>{% endfor %}</select></div>
+        <div><label>To Location</label><select name="to_storage_location_id" required>{% for location in storage_locations %}<option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>{% endfor %}</select></div>
+        <div><label>Quantity</label><input type="number" name="quantity" min="1" required></div>
+        <div><label>Reference</label><input type="text" name="reference" placeholder="Optional transfer reference"></div>
+        <div><label>Notes</label><input type="text" name="notes" placeholder="Optional notes"></div>
+        <div class="form-grid-action"><button type="submit">Transfer Stock</button></div>
+    </form>
+</section>
+{% endif %}
+
+<section class="card table-card">
+    <div class="table-card-header"><div><p class="section-label">LEDGER</p><h3>Movement History</h3></div></div>
+    <div class="table-scroll">
+        <table>
+            <thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Location</th><th>Reason</th><th>Asset</th><th>Recorded By</th><th>Reference</th></tr></thead>
+            <tbody>
+            {% for movement in movements %}
+                <tr>
+                    <td>{{ movement.movement_date.strftime('%d %b %Y %H:%M') }}</td>
+                    <td>{{ movement.transaction_type }}</td>
+                    <td>{{ movement.sku }}<br><strong>{{ movement.item_name }}</strong></td>
+                    <td>{% if movement.transaction_type == 'IN' %}+{{ movement.quantity }}{% elif movement.transaction_type == 'OUT' %}-{{ movement.quantity }}{% else %}{{ movement.quantity }}{% endif %}</td>
+                    <td>{{ movement.location_name }}</td>
+                    <td>{{ movement.reason }}</td>
+                    <td>{{ movement.asset_name }}</td>
+                    <td>{{ movement.actor or '-' }}</td>
+                    <td>{{ movement.reference or '-' }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="9">No stock movements recorded yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

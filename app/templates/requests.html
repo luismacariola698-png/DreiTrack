@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Requests | DreiTrack{% endblock %}
+{% block content %}
+<div class="page-header"><div><h2>Stock Requests</h2><p>Request inventory from a specific storage location and optionally associate it with an asset.</p></div></div>
+
+{% if request.state.user.role in ['ADMIN', 'MANAGER', 'STAFF'] %}
+<section class="card form-card">
+    <p class="section-label">NEW REQUEST</p><h3>Create Stock Request</h3>
+    <form method="post" action="/requests/create" class="form-grid">
+        <div><label>Item</label><select name="item_id" required>{% for item in items %}<option value="{{ item.id }}">{{ item.sku }} - {{ item.name }}</option>{% endfor %}</select></div>
+        <div><label>Quantity</label><input type="number" name="quantity" min="1" required></div>
+        <div><label>Storage Location</label><select name="storage_location_id" required>{% for location in storage_locations %}<option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>{% endfor %}</select></div>
+        <div><label>Asset (optional)</label><select name="asset_id"><option value="">No specific asset</option>{% for asset in assets %}<option value="{{ asset.id }}">{{ asset.code }}{% if asset.name %} - {{ asset.name }}{% endif %}</option>{% endfor %}</select></div>
+        <div class="wide-field"><label>Reason</label><input type="text" name="reason" placeholder="Maintenance / production / testing / project use" required></div>
+        <div class="wide-field"><label>Notes</label><input type="text" name="notes" placeholder="Optional notes"></div>
+        <div class="form-grid-action"><button type="submit">Create Request</button></div>
+    </form>
+    <p class="muted-text">Requested by {{ request.state.user.display_name }}.</p>
+</section>
+{% endif %}
+
+<section class="card table-card">
+    <div class="table-card-header"><div><p class="section-label">REQUEST LEDGER</p><h3>Request History</h3></div></div>
+    <div class="table-scroll">
+    <table>
+        <thead><tr><th>ID</th><th>Item</th><th>Location</th><th>Asset</th><th>Qty</th><th>Requested By</th><th>Reason</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for row in requests %}
+            <tr>
+                <td>REQ-{{ row.id }}</td>
+                <td>{{ row.sku }}<br><strong>{{ row.item_name }}</strong></td>
+                <td>{{ row.location_name }}</td>
+                <td>{{ row.asset_name }}</td>
+                <td>{{ row.quantity }}</td>
+                <td>{{ row.requested_by }}</td>
+                <td>{{ row.reason }}</td>
+                <td>{{ row.request_date.strftime('%d %b %Y %H:%M') }}</td>
+                <td>{{ row.status }}</td>
+                <td>
+                    {% if row.status == 'PENDING' and request.state.user.role in ['ADMIN', 'MANAGER'] %}
+                        <form method="post" action="/requests/approve" class="inline-action-form"><input type="hidden" name="request_id" value="{{ row.id }}"><button type="submit">Approve</button></form>
+                        <form method="post" action="/requests/reject" class="inline-action-form"><input type="hidden" name="request_id" value="{{ row.id }}"><input type="text" name="notes" placeholder="Rejection note"><button type="submit">Reject</button></form>
+                    {% elif row.status == 'APPROVED' and request.state.user.role in ['ADMIN', 'MANAGER', 'STAFF'] %}
+                        <form method="post" action="/requests/collect"><input type="hidden" name="request_id" value="{{ row.id }}"><button type="submit">Collect</button></form>
+                    {% elif row.status == 'REJECTED' %}
+                        Rejected{% if row.approved_by %} by {{ row.approved_by }}{% endif %}{% if row.notes %}<br>{{ row.notes }}{% endif %}
+                    {% elif row.status == 'COLLECTED' %}
+                        Collected
+                    {% else %}-{% endif %}
+                </td>
+            </tr>
+        {% else %}<tr><td colspan="10">No requests yet.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endblock %}

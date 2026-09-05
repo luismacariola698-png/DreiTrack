@@ -1,0 +1,1821 @@
+{% extends "base.html" %}
+
+{% block title %}
+Inventory Intelligence | DreiTrack
+{% endblock %}
+
+
+{% block content %}
+
+
+<!-- =====================================================
+     PAGE HEADER
+===================================================== -->
+
+<div class="page-header">
+
+    <div>
+
+        <h2>
+            Inventory Intelligence
+        </h2>
+
+        <p>
+            Inventory planning, anomaly detection and
+            local AI-assisted analysis.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     PLANNING ENGINE INFORMATION
+===================================================== -->
+
+<div class="card intelligence-intro">
+
+    <div>
+
+        <p class="section-label">
+            PLANNING ENGINE
+        </p>
+
+        <h3>
+            Inventory Planning
+        </h3>
+
+        <p>
+            DreiTrack analyses recorded inventory activity to estimate
+            stock coverage and identify items that may require
+            procurement attention.
+        </p>
+
+        <p>
+            Planning calculations use stock movements,
+            available inventory, outstanding purchase orders,
+            minimum stock levels and supplier lead times.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     ANOMALY DETECTION
+===================================================== -->
+
+<div class="card anomaly-overview">
+
+    <div class="anomaly-overview-header">
+
+        <div>
+
+            <p class="section-label">
+                DETECTION ENGINE
+            </p>
+
+            <h3>
+                Anomaly Detection
+            </h3>
+
+            <p>
+                DreiTrack reviews inventory activity for unusual usage,
+                repeated stock adjustments, supplier lead-time changes
+                and overdue purchase orders.
+            </p>
+
+            <p class="muted-text">
+                Flags indicate activity that may require review.
+                They do not automatically mean an error,
+                inventory loss or misconduct has occurred.
+            </p>
+
+        </div>
+
+
+        <div class="anomaly-summary">
+
+            <div>
+
+                <span class="detail-label">
+                    High Priority
+                </span>
+
+                <strong>
+                    {{ high_anomaly_count }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Review
+                </span>
+
+                <strong>
+                    {{ medium_anomaly_count }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {% if anomalies %}
+
+        <div class="anomaly-list">
+
+            {% for anomaly in anomalies %}
+
+                <div class="anomaly-entry">
+
+                    <div class="anomaly-entry-header">
+
+                        <div>
+
+                            <div class="anomaly-title-row">
+
+                                <h4>
+                                    {{ anomaly.title }}
+                                </h4>
+
+
+                                {% if anomaly.severity == "HIGH" %}
+
+                                    <span class="status status-danger">
+                                        High Priority
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="status status-warning">
+                                        Review
+                                    </span>
+
+                                {% endif %}
+
+                            </div>
+
+
+                            <p class="anomaly-item">
+
+                                <a href="/inventory/{{ anomaly.item_id }}">
+                                    {{ anomaly.item_name }}
+                                </a>
+
+                                <span>
+                                    {{ anomaly.sku }}
+                                </span>
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <p class="anomaly-summary-text">
+                        {{ anomaly.summary }}
+                    </p>
+
+
+                    <ul class="anomaly-details">
+
+                        {% for detail in anomaly.details %}
+
+                            <li>
+                                {{ detail }}
+                            </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+    {% else %}
+
+        <div class="anomaly-clear">
+
+            <strong>
+                No unusual activity detected
+            </strong>
+
+            <p>
+                None of the current inventory records
+                crossed DreiTrack's anomaly thresholds.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- =====================================================
+     DREI INVENTORY ATTENTION
+===================================================== -->
+
+<div class="card drei-panel">
+
+    <div class="drei-header">
+
+        <div>
+
+            <p class="section-label">
+                INVENTORY ATTENTION
+            </p>
+
+            <h3>
+                What Needs Attention?
+            </h3>
+
+            <p>
+                Drei can review the inventory items currently flagged
+                by DreiTrack's planning and anomaly engines and explain
+                what should be reviewed first.
+            </p>
+
+        </div>
+
+
+        <div class="drei-status">
+
+            {% if ai_status and ai_status.available %}
+
+                <span class="status status-good">
+                    Drei Available
+                </span>
+
+            {% else %}
+
+                <span class="status status-warning">
+                    Drei Offline
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="drei-access-note">
+
+        <strong>
+            DreiTrack decides what requires attention.
+        </strong>
+
+        <span>
+            Drei explains and prioritises verified findings.
+            The AI does not create its own stock warnings.
+        </span>
+
+    </div>
+
+
+    <!-- ASK FOR ATTENTION SUMMARY -->
+
+    <form
+        method="post"
+        action="/insights/attention"
+        class="drei-form"
+    >
+
+        <input
+            type="hidden"
+            name="question"
+            value="What needs my attention right now?"
+        >
+
+
+        <button
+            type="submit"
+            class="button-link"
+
+            {% if not ai_status or not ai_status.available %}
+                disabled
+            {% endif %}
+        >
+            Review Inventory Attention
+        </button>
+
+    </form>
+
+
+    <!-- ATTENTION ERROR -->
+
+    {% if attention_error %}
+
+        <div class="drei-message drei-message-error">
+
+            <strong>
+                Drei could not review inventory attention.
+            </strong>
+
+            <p>
+                {{ attention_error }}
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- VERIFIED ATTENTION ITEMS -->
+
+    {% if attention_items %}
+
+        <div class="drei-evidence">
+
+            <div class="drei-result-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        VERIFIED DREITRACK FINDINGS
+                    </p>
+
+                    <h4>
+                        Items Requiring Attention
+                    </h4>
+
+                </div>
+
+
+                <span class="muted-text">
+                    {{ attention_items | length }}
+                    item(s)
+                </span>
+
+            </div>
+
+
+            {% for item in attention_items %}
+
+                <div class="intelligence-section">
+
+                    <div class="intelligence-item-header">
+
+                        <div>
+
+                            <h3>
+
+                                <a href="/inventory/{{ item.item_id }}">
+                                    {{ item.name }}
+                                </a>
+
+                            </h3>
+
+                            <p class="muted-text">
+                                SKU: {{ item.sku }}
+                            </p>
+
+                        </div>
+
+
+                        <div>
+
+                            {% if item.highest_anomaly_severity == "HIGH" %}
+
+                                <span class="status status-danger">
+                                    High Priority
+                                </span>
+
+                            {% elif item.highest_anomaly_severity == "MEDIUM" %}
+
+                                <span class="status status-warning">
+                                    Review
+                                </span>
+
+                            {% elif item.reorder_recommended %}
+
+                                <span class="status status-danger">
+                                    Reorder
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="drei-evidence-grid">
+
+
+                        <div>
+
+                            <span>
+                                Available
+                            </span>
+
+                            <strong>
+                                {{ item.available_stock }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Minimum
+                            </span>
+
+                            <strong>
+                                {{ item.minimum_stock }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                On Order
+                            </span>
+
+                            <strong>
+                                {{ item.on_order }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Projected
+                            </span>
+
+                            <strong>
+                                {{ item.projected_stock }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Suggested Reorder
+                            </span>
+
+                            <strong>
+                                {{ item.suggested_reorder_quantity }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Anomalies
+                            </span>
+
+                            <strong>
+                                {{ item.anomaly_count }}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    {% if item.attention_reasons %}
+
+                        <div class="drei-evidence-anomalies">
+
+                            <strong>
+                                Why this item is listed
+                            </strong>
+
+                            <ul>
+
+                                {% for reason in item.attention_reasons %}
+
+                                    <li>
+                                        {{ reason }}
+                                    </li>
+
+                                {% endfor %}
+
+                            </ul>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- DREI ATTENTION ANALYSIS -->
+
+    {% if attention_answer %}
+
+        <div class="drei-analysis">
+
+            <div class="drei-result-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        DREI ANALYSIS
+                    </p>
+
+                    <h4>
+                        Attention Summary
+                    </h4>
+
+                </div>
+
+
+                <span class="muted-text">
+                    Local AI
+                </span>
+
+            </div>
+
+
+            <div class="drei-response">
+                {{ attention_answer }}
+            </div>
+
+
+            <p class="drei-analysis-note">
+                Drei's summary is based on the verified findings
+                displayed above. DreiTrack's planning and anomaly
+                engines remain authoritative.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+<!-- =====================================================
+     DREI OVERDUE PURCHASE ORDERS
+===================================================== -->
+
+<div class="card drei-panel">
+
+    <div class="drei-header">
+
+        <div>
+
+            <p class="section-label">
+                PROCUREMENT REVIEW
+            </p>
+
+            <h3>
+                Overdue Purchase Orders
+            </h3>
+
+            <p>
+                Drei can review open purchase orders whose
+                expected delivery dates have passed while
+                stock is still outstanding.
+            </p>
+
+        </div>
+
+
+        <div class="drei-status">
+
+            {% if ai_status and ai_status.available %}
+
+                <span class="status status-good">
+                    Drei Available
+                </span>
+
+            {% else %}
+
+                <span class="status status-warning">
+                    Drei Offline
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         EXPLANATION
+    ================================================= -->
+
+    <div class="drei-access-note">
+
+        <strong>
+            Purchase-order records remain authoritative.
+        </strong>
+
+        <span>
+            DreiTrack determines whether an order is overdue.
+            Drei only explains the verified procurement records.
+        </span>
+
+    </div>
+
+
+    <!-- =================================================
+         REVIEW BUTTON
+    ================================================= -->
+
+    <form
+        method="post"
+        action="/insights/overdue-orders"
+        class="drei-form"
+    >
+
+        <input
+            type="hidden"
+            name="question"
+            value="Which purchase orders are overdue?"
+        >
+
+
+        <button
+            type="submit"
+            class="button-link"
+
+            {% if not ai_status or not ai_status.available %}
+                disabled
+            {% endif %}
+        >
+            Review Overdue Orders
+        </button>
+
+    </form>
+
+
+    <!-- =================================================
+         ERROR
+    ================================================= -->
+
+    {% if overdue_error %}
+
+        <div class="drei-message drei-message-error">
+
+            <strong>
+                Drei could not review purchase orders.
+            </strong>
+
+            <p>
+                {{ overdue_error }}
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =================================================
+         VERIFIED OVERDUE ORDERS
+    ================================================= -->
+
+    {% if overdue_orders %}
+
+        <div class="drei-evidence">
+
+            <div class="drei-result-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        VERIFIED PROCUREMENT DATA
+                    </p>
+
+                    <h4>
+                        Overdue Orders
+                    </h4>
+
+                </div>
+
+
+                <span class="muted-text">
+                    {{ overdue_orders | length }}
+                    order(s)
+                </span>
+
+            </div>
+
+
+            {% for order in overdue_orders %}
+
+                <div class="intelligence-section">
+
+
+                    <!-- ORDER HEADER -->
+
+                    <div class="intelligence-item-header">
+
+                        <div>
+
+                            <h3>
+                                {{ order.po_number }}
+                            </h3>
+
+                            <p class="muted-text">
+                                {{ order.supplier }}
+                            </p>
+
+                        </div>
+
+
+                        <div>
+
+                            {% if order.days_overdue >= 7 %}
+
+                                <span class="status status-danger">
+                                    {{ order.days_overdue }}
+                                    Days Overdue
+                                </span>
+
+                            {% else %}
+
+                                <span class="status status-warning">
+                                    {{ order.days_overdue }}
+                                    Days Overdue
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ORDER METRICS -->
+
+                    <div class="drei-evidence-grid">
+
+
+                        <div>
+
+                            <span>
+                                Status
+                            </span>
+
+                            <strong>
+                                {{ order.status }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Expected Delivery
+                            </span>
+
+                            <strong>
+                                {{ order.expected_delivery_date }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Days Overdue
+                            </span>
+
+                            <strong>
+                                {{ order.days_overdue }}
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+                                Outstanding Units
+                            </span>
+
+                            <strong>
+                                {{ order.total_outstanding_units }}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- OUTSTANDING ITEMS -->
+
+                    {% if order.lines %}
+
+                        <div class="drei-evidence-anomalies">
+
+                            <strong>
+                                Outstanding Items
+                            </strong>
+
+                            <ul>
+
+                                {% for line in order.lines %}
+
+                                    <li>
+
+                                        {{ line.item_name }}
+
+                                        {% if line.sku %}
+                                            ({{ line.sku }})
+                                        {% endif %}
+
+                                        :
+                                        {{ line.quantity_outstanding }}
+                                        unit(s) outstanding
+
+                                        from
+                                        {{ line.quantity_ordered }}
+                                        ordered
+
+                                    </li>
+
+                                {% endfor %}
+
+                            </ul>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =================================================
+         DREI PROCUREMENT ANALYSIS
+    ================================================= -->
+
+    {% if overdue_answer %}
+
+        <div class="drei-analysis">
+
+            <div class="drei-result-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        DREI ANALYSIS
+                    </p>
+
+                    <h4>
+                        Procurement Summary
+                    </h4>
+
+                </div>
+
+
+                <span class="muted-text">
+                    Local AI
+                </span>
+
+            </div>
+
+
+            <div class="drei-response">
+                {{ overdue_answer }}
+            </div>
+
+
+            <p class="drei-analysis-note">
+                Drei's summary is based on verified purchase-order
+                records. Drei does not determine delivery causes
+                unless those causes are recorded in DreiTrack.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+<!-- =====================================================
+     ASK DREI ABOUT ONE ITEM
+===================================================== -->
+
+<div class="card drei-panel">
+
+    <div class="drei-header">
+
+        <div>
+
+            <p class="section-label">
+                ITEM ANALYSIS
+            </p>
+
+            <h3>
+                Ask Drei
+            </h3>
+
+            <p>
+                Ask Drei about a specific inventory item.
+                Drei receives current DreiTrack planning
+                and anomaly information before answering.
+            </p>
+
+        </div>
+
+
+        <div class="drei-status">
+
+            {% if ai_status and ai_status.available %}
+
+                <span class="status status-good">
+                    Available
+                </span>
+
+            {% else %}
+
+                <span class="status status-warning">
+                    Offline
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="drei-access-note">
+
+        <strong>
+            Read-only AI access
+        </strong>
+
+        <span>
+            Drei can analyse inventory information,
+            but it cannot modify stock, approve requests
+            or create purchase orders.
+        </span>
+
+    </div>
+
+
+    <form
+        method="post"
+        action="/insights/assistant"
+        class="drei-form"
+    >
+
+        <div class="drei-field">
+
+            <label for="drei-item">
+                Inventory Item
+            </label>
+
+
+            <select
+                id="drei-item"
+                name="item_id"
+                required
+            >
+
+                <option value="">
+                    Select an inventory item
+                </option>
+
+
+                {% for insight in insights %}
+
+                    <option
+                        value="{{ insight.item_id }}"
+
+                        {% if selected_item_id == insight.item_id %}
+                            selected
+                        {% endif %}
+                    >
+
+                        {{ insight.sku }}
+                        -
+                        {{ insight.name }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="drei-field">
+
+            <label for="drei-question">
+                Question
+            </label>
+
+
+            <textarea
+                id="drei-question"
+                name="question"
+                rows="4"
+                maxlength="1000"
+                required
+                placeholder="Example: Why is this item at risk of running out?"
+            >{{ assistant_question or "" }}</textarea>
+
+
+            <small>
+                Drei receives verified information
+                for the selected item only.
+            </small>
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="button-link"
+
+            {% if not ai_status or not ai_status.available %}
+                disabled
+            {% endif %}
+        >
+            Ask Drei
+        </button>
+
+    </form>
+
+
+    {% if ai_status and not ai_status.available %}
+
+        <div class="drei-message">
+
+            <strong>
+                Drei is currently unavailable.
+            </strong>
+
+            <p>
+                {{ ai_status.message }}
+                Normal DreiTrack functions are unaffected.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    {% if assistant_error %}
+
+        <div class="drei-message drei-message-error">
+
+            <strong>
+                Drei could not complete the request.
+            </strong>
+
+            <p>
+                {{ assistant_error }}
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =================================================
+         VERIFIED ITEM DATA
+    ================================================= -->
+
+    {% if selected_insight %}
+
+        <div class="drei-evidence">
+
+            <div class="drei-result-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        VERIFIED DREITRACK DATA
+                    </p>
+
+                    <h4>
+                        {{ selected_insight.name }}
+                    </h4>
+
+                </div>
+
+
+                <span class="muted-text">
+                    {{ selected_insight.sku }}
+                </span>
+
+            </div>
+
+
+            <div class="drei-evidence-grid">
+
+
+                <div>
+
+                    <span>
+                        Available Stock
+                    </span>
+
+                    <strong>
+                        {{ selected_insight.available_stock }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Minimum Stock
+                    </span>
+
+                    <strong>
+                        {{ selected_insight.minimum_stock }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Stock on Order
+                    </span>
+
+                    <strong>
+                        {{ selected_insight.on_order }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Projected Stock
+                    </span>
+
+                    <strong>
+                        {{ selected_insight.projected_stock }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        30-Day Usage
+                    </span>
+
+                    <strong>
+                        {{ selected_insight.usage_30_days }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Effective Lead Time
+                    </span>
+
+                    <strong>
+                        {{ selected_insight.effective_lead_time }}
+                        days
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Target Stock
+                    </span>
+
+                    <strong>
+                        {{ selected_insight.target_stock }}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Suggested Reorder
+                    </span>
+
+                    <strong>
+                        {{ selected_insight.suggested_reorder_quantity }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            {% if selected_anomalies %}
+
+                <div class="drei-evidence-anomalies">
+
+                    <strong>
+                        Detected review flags
+                    </strong>
+
+                    <ul>
+
+                        {% for anomaly in selected_anomalies %}
+
+                            <li>
+
+                                {{ anomaly.title }}
+
+                                <span>
+                                    {{ anomaly.severity }}
+                                </span>
+
+                            </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+
+    <!-- =================================================
+         DREI ITEM ANALYSIS
+    ================================================= -->
+
+    {% if assistant_answer %}
+
+        <div class="drei-analysis">
+
+            <div class="drei-result-heading">
+
+                <div>
+
+                    <p class="section-label">
+                        DREI ANALYSIS
+                    </p>
+
+                    <h4>
+                        Response
+                    </h4>
+
+                </div>
+
+
+                <span class="muted-text">
+                    Local AI
+                </span>
+
+            </div>
+
+
+            <div class="drei-response">
+                {{ assistant_answer }}
+            </div>
+
+
+            <p class="drei-analysis-note">
+                Drei's response is an interpretation
+                of the verified information shown above.
+                DreiTrack inventory records and calculations
+                remain authoritative.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- =====================================================
+     INVENTORY PLANNING RESULTS
+===================================================== -->
+
+{% for insight in insights %}
+
+<div class="card intelligence-card">
+
+
+    <div class="intelligence-item-header">
+
+        <div>
+
+            <h3>
+
+                <a href="/inventory/{{ insight.item_id }}">
+                    {{ insight.name }}
+                </a>
+
+            </h3>
+
+            <p class="muted-text">
+                SKU: {{ insight.sku }}
+            </p>
+
+        </div>
+
+
+        <div>
+
+            {% if insight.reorder_recommended %}
+
+                <span class="status status-danger">
+                    Attention Required
+                </span>
+
+            {% else %}
+
+                <span class="status status-good">
+                    Stock Sufficient
+                </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- STOCK POSITION -->
+
+    <section class="intelligence-section">
+
+        <h4>
+            Stock Position
+        </h4>
+
+
+        <div class="intelligence-metrics">
+
+            <div class="metric-box">
+
+                <span class="metric-label">
+                    Available
+                </span>
+
+                <strong class="metric-value">
+                    {{ insight.available_stock }}
+                </strong>
+
+            </div>
+
+
+            <div class="metric-box">
+
+                <span class="metric-label">
+                    Minimum
+                </span>
+
+                <strong class="metric-value">
+                    {{ insight.minimum_stock }}
+                </strong>
+
+            </div>
+
+
+            <div class="metric-box">
+
+                <span class="metric-label">
+                    On Order
+                </span>
+
+                <strong class="metric-value">
+                    {{ insight.on_order }}
+                </strong>
+
+            </div>
+
+
+            <div class="metric-box">
+
+                <span class="metric-label">
+                    Projected
+                </span>
+
+                <strong class="metric-value">
+                    {{ insight.projected_stock }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- USAGE -->
+
+    <section class="intelligence-section">
+
+        <h4>
+            Usage Analysis
+        </h4>
+
+
+        <div class="detail-grid">
+
+            <div>
+
+                <span class="detail-label">
+                    Used in last 30 days
+                </span>
+
+                <strong>
+                    {{ insight.usage_30_days }} units
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Used during days 31-90
+                </span>
+
+                <strong>
+                    {{ insight.usage_31_to_90_days }} units
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Estimated daily usage
+                </span>
+
+                <strong>
+                    {{ insight.weighted_daily_usage }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Estimated stock remaining
+                </span>
+
+                <strong>
+
+                    {% if insight.estimated_days_remaining is not none %}
+
+                        {{ insight.estimated_days_remaining }}
+                        days
+
+                    {% else %}
+
+                        Insufficient usage history
+
+                    {% endif %}
+
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Projected stock coverage
+                </span>
+
+                <strong>
+
+                    {% if insight.projected_days_remaining is not none %}
+
+                        {{ insight.projected_days_remaining }}
+                        days
+
+                    {% else %}
+
+                        Insufficient usage history
+
+                    {% endif %}
+
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- LEAD TIME -->
+
+    <section class="intelligence-section">
+
+        <h4>
+            Supplier Lead Time
+        </h4>
+
+
+        <div class="detail-grid">
+
+            <div>
+
+                <span class="detail-label">
+                    Mode
+                </span>
+
+                <strong>
+                    {{ insight.lead_time_mode }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Configured
+                </span>
+
+                <strong>
+                    {{ insight.configured_lead_time }}
+                    days
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Learned
+                </span>
+
+                <strong>
+
+                    {% if insight.learned_lead_time is not none %}
+
+                        {{ insight.learned_lead_time }}
+                        days
+
+                    {% else %}
+
+                        Not enough completed orders
+
+                    {% endif %}
+
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Effective
+                </span>
+
+                <strong>
+                    {{ insight.effective_lead_time }}
+                    days
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Source
+                </span>
+
+                <strong>
+                    {{ insight.lead_time_source }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Completed orders analysed
+                </span>
+
+                <strong>
+                    {{ insight.completed_orders }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- REORDER PLANNING -->
+
+    <section class="intelligence-section">
+
+        <h4>
+            Reorder Planning
+        </h4>
+
+
+        <div class="detail-grid">
+
+            <div>
+
+                <span class="detail-label">
+                    Safety buffer
+                </span>
+
+                <strong>
+                    {{ insight.safety_buffer_days }}
+                    days
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Coverage target
+                </span>
+
+                <strong>
+                    {{ insight.coverage_days }}
+                    days
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Target stock level
+                </span>
+
+                <strong>
+                    {{ insight.target_stock }}
+                    units
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span class="detail-label">
+                    Suggested reorder
+                </span>
+
+                <strong>
+                    {{ insight.suggested_reorder_quantity }}
+                    units
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        {% if insight.suggested_reorder_quantity > 0 %}
+
+            <div class="planning-action">
+
+                <a
+                    class="button-link"
+                    href="/orders?item_id={{ insight.item_id }}&quantity={{ insight.suggested_reorder_quantity }}"
+                >
+                    Prepare Purchase Order
+                </a>
+
+            </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- RECOMMENDATION -->
+
+    <section class="intelligence-section">
+
+        <h4>
+            Recommendation
+        </h4>
+
+
+        <p class="recommendation-text">
+            {{ insight.recommendation }}
+        </p>
+
+
+        <h4>
+            Supporting Factors
+        </h4>
+
+
+        <ul class="reason-list">
+
+            {% for reason in insight.reasons %}
+
+                <li>
+                    {{ reason }}
+                </li>
+
+            {% else %}
+
+                <li>
+                    No immediate inventory risk was detected.
+                </li>
+
+            {% endfor %}
+
+        </ul>
+
+
+        <p class="confidence-line">
+
+            <span>
+                Confidence:
+            </span>
+
+            <strong>
+                {{ insight.confidence }}
+            </strong>
+
+        </p>
+
+    </section>
+
+</div>
+
+
+{% else %}
+
+
+<div class="card empty-state">
+
+    <h3>
+        No inventory data available
+    </h3>
+
+    <p>
+        Planning results will appear after inventory
+        items and stock activity have been recorded.
+    </p>
+
+</div>
+
+
+{% endfor %}
+
+
+{% endblock %}

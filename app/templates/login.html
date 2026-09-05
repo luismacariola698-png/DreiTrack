@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | DreiTrack</title>
+    <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="auth-body">
+<div class="auth-shell">
+    <div class="auth-brand">
+        <div class="brand-mark">DT</div>
+        <div>
+            <h1>DreiTrack</h1>
+            <p>Private physical inventory operations for your company.</p>
+        </div>
+    </div>
+
+    <div class="auth-card">
+        <p class="section-label">COMPANY ACCESS</p>
+        <h2>Sign in</h2>
+        <p>Use the account issued by your DreiTrack administrator.</p>
+
+        {% if error %}
+        <div class="drei-message drei-message-error"><strong>{{ error }}</strong></div>
+        {% endif %}
+
+        <form method="post" action="/login" class="stack-form">
+            <label>Email</label>
+            <input type="email" name="email" required autocomplete="email">
+
+            <label>Password</label>
+            <input type="password" name="password" required autocomplete="current-password">
+
+            <button type="submit">Sign In</button>
+        </form>
+
+        <p class="auth-secondary">Need an account? Contact your company administrator.</p>
+    </div>
+</div>
+</body>
+</html>

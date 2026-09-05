@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.name }} | DreiTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>{{ item.name }}</h2>
+        <p>{{ item.sku }} · {{ request.state.organization.name }}</p>
+    </div>
+    <div><a href="/inventory">Back to Inventory</a></div>
+</div>
+
+<div class="detail-layout">
+    <section class="card detail-card">
+        <p class="section-label">ITEM DETAILS</p>
+        <h3>{{ item.name }}</h3>
+        <div class="detail-grid">
+            <div><span>SKU</span><strong>{{ item.sku }}</strong></div>
+            <div><span>Category</span><strong>{{ item.category }}</strong></div>
+            <div><span>Default Location</span><strong>{{ item.location }}</strong></div>
+            <div><span>Supplier</span><strong>{{ item.supplier or '-' }}</strong></div>
+            <div><span>Unit Cost</span><strong>{% if item.unit_cost is not none %}${{ item.unit_cost }}{% else %}-{% endif %}</strong></div>
+            <div><span>Lead Time</span><strong>{{ item.lead_time_days }} days</strong></div>
+        </div>
+    </section>
+
+    <section class="card detail-card">
+        <p class="section-label">ORGANIZATION-WIDE STOCK</p>
+        <h3>Stock Position</h3>
+        <div class="detail-grid">
+            <div><span>Physical</span><strong>{{ item.physical_stock }}</strong></div>
+            <div><span>Reserved</span><strong>{{ item.reserved_stock }}</strong></div>
+            <div><span>Available</span><strong>{{ item.available_stock }}</strong></div>
+            <div><span>On Order</span><strong>{{ item.on_order }}</strong></div>
+            <div><span>Minimum</span><strong>{{ item.minimum_stock }}</strong></div>
+            <div>
+                <span>Status</span>
+                <strong>
+                    {% if item.available_stock <= item.minimum_stock %}
+                    <span class="status status-danger">Low Stock</span>
+                    {% else %}
+                    <span class="status status-good">Stock OK</span>
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+    </section>
+</div>
+
+<section class="card table-card">
+    <div class="table-card-header">
+        <div>
+            <p class="section-label">LOCATION BALANCES</p>
+            <h3>Stock by Storage Location</h3>
+        </div>
+    </div>
+    <div class="table-scroll">
+        <table>
+            <thead><tr><th>Location</th><th>Physical</th><th>Reserved</th><th>Available</th></tr></thead>
+            <tbody>
+                {% for balance in location_balances %}
+                <tr>
+                    <td>{{ balance.name }}</td>
+                    <td>{{ balance.physical }}</td>
+                    <td>{{ balance.reserved }}</td>
+                    <td>{{ balance.available }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4">No location balances recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
+<section class="card form-card">
+    <p class="section-label">ITEM SETTINGS</p>
+    <h3>Edit Item</h3>
+    <form method="post" action="/inventory/{{ item.id }}/edit" class="form-grid">
+        <div><label>Item Name</label><input type="text" name="name" value="{{ item.name }}" required></div>
+        <div><label>Category</label><input type="text" name="category" value="{{ item.category }}" required></div>
+        <div>
+            <label>Default Storage Location</label>
+            <select name="storage_location_id" required>
+                {% for location in storage_locations %}
+                <option value="{{ location.id }}" {% if location.id == item.default_storage_location_id %}selected{% endif %}>{{ location.code }} - {{ location.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div><label>Minimum Stock</label><input type="number" name="min_stock" min="0" value="{{ item.minimum_stock }}" required></div>
+        <div><label>Supplier</label><input type="text" name="supplier" value="{{ item.supplier or '' }}"></div>
+        <div><label>Unit Cost</label><input type="number" name="unit_cost" min="0" step="0.01" value="{{ item.unit_cost if item.unit_cost is not none else '' }}"></div>
+        <div><label>Lead Time Days</label><input type="number" name="lead_time_days" min="0" value="{{ item.lead_time_days }}" required></div>
+        <div>
+            <label>Lead Time Mode</label>
+            <select name="lead_time_mode" required>
+                <option value="AUTOMATIC" {% if item.lead_time_mode == 'AUTOMATIC' %}selected{% endif %}>Automatic</option>
+                <option value="CONFIGURED" {% if item.lead_time_mode == 'CONFIGURED' %}selected{% endif %}>Configured</option>
+            </select>
+        </div>
+        <div class="form-grid-action"><button type="submit">Update Item</button></div>
+    </form>
+</section>
+
+<section class="card form-card">
+    <p class="section-label">AUDIT</p>
+    <h3>Location Stock Adjustment</h3>
+    <p>Enter the physical count for one storage location. DreiTrack records only the difference as an audit transaction.</p>
+    <form method="post" action="/inventory/{{ item.id }}/adjust" class="form-grid">
+        <div>
+            <label>Storage Location</label>
+            <select name="storage_location_id" required>
+                {% for location in storage_locations %}
+                <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div><label>Actual Physical Quantity</label><input type="number" name="actual_quantity" min="0" required></div>
+        <div><label>Reason</label><input type="text" name="reason" value="Audit count correction" required></div>
+        <div><label>Notes</label><input type="text" name="notes" placeholder="Optional notes"></div>
+        <div class="form-grid-action"><button type="submit">Apply Adjustment</button></div>
+    </form>
+    <p class="muted-text">Recorded by {{ request.state.user.display_name }} automatically.</p>
+</section>
+{% endif %}
+
+<section class="card table-card">
+    <div class="table-card-header">
+        <div>
+            <p class="section-label">HISTORY</p>
+            <h3>Movement History</h3>
+        </div>
+    </div>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Type</th><th>Qty</th><th>Location</th><th>Reason</th><th>Asset</th><th>Actor</th><th>Reference</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+                {% for movement in movements %}
+                <tr>
+                    <td>{{ movement.movement_date }}</td>
+                    <td>{{ movement.transaction_type }}</td>
+                    <td>{{ movement.quantity }}</td>
+                    <td>{{ movement.location_name }}</td>
+                    <td>{{ movement.reason }}</td>
+                    <td>{{ movement.asset_name }}</td>
+                    <td>{{ movement.actor or '-' }}</td>
+                    <td>{{ movement.reference or '-' }}</td>
+                    <td>{{ movement.notes or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="9">No movement history yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

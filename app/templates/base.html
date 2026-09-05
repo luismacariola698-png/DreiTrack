@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DreiTrack{% endblock %}</title>
+    <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-row">
+                <div class="brand-mark">DT</div>
+                <div>
+                    <h1>DreiTrack</h1>
+                    <p>Inventory, Procurement & Assets</p>
+                </div>
+            </div>
+        </div>
+
+        {% if request.state.organization %}
+        <div class="workspace-card">
+            <span class="workspace-label">Company</span>
+            <strong>{{ request.state.organization.name }}</strong>
+            <span>{{ request.state.user.display_name }} · {{ request.state.user.role }}</span>
+        </div>
+        {% endif %}
+
+        <nav class="nav">
+            <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
+            <a href="/inventory" class="{% if request.url.path.startswith('/inventory') %}active{% endif %}">Inventory</a>
+            <a href="/movements" class="{% if request.url.path.startswith('/movements') %}active{% endif %}">Stock In / Out</a>
+            <a href="/requests" class="{% if request.url.path.startswith('/requests') %}active{% endif %}">Requests</a>
+            <a href="/assets" class="{% if request.url.path.startswith('/assets') %}active{% endif %}">Assets</a>
+            <a href="/orders" class="{% if request.url.path.startswith('/orders') %}active{% endif %}">Orders / Procurement</a>
+            <a href="/insights" class="{% if request.url.path.startswith('/insights') %}active{% endif %}">Inventory Intelligence</a>
+
+            {% if request.state.user and request.state.user.role == 'ADMIN' %}
+            <a href="/settings" class="{% if request.url.path.startswith('/settings') %}active{% endif %}">Company Settings</a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            {% if request.state.user %}
+            <form method="post" action="/logout">
+                <button type="submit" class="sidebar-logout">Sign Out</button>
+            </form>
+            {% endif %}
+            <p>Physical Inventory Operations</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="content-shell">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+</body>
+</html>

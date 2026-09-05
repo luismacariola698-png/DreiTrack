@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Assets | DreiTrack{% endblock %}
+{% block content %}
+<div class="page-header"><div><h2>Assets</h2><p>Track equipment and the inventory components associated with it across organization sites.</p></div></div>
+
+{% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
+<section class="card form-card">
+    <p class="section-label">NEW ASSET</p><h3>Add Asset</h3>
+    <form method="post" action="/assets/create" class="form-grid">
+        <div><label>Asset Code</label><input type="text" name="code" placeholder="CNC-004" required></div>
+        <div><label>Asset Name</label><input type="text" name="name" placeholder="Optional display name"></div>
+        <div><label>Asset Type</label><select name="asset_type_id" required>{% for asset_type in asset_types %}<option value="{{ asset_type.id }}">{{ asset_type.name }}</option>{% endfor %}</select></div>
+        <div><label>Site</label><select name="site_id" required>{% for site in sites %}<option value="{{ site.id }}">{{ site.code }} - {{ site.name }}</option>{% endfor %}</select></div>
+        <div><label>Serial Number</label><input type="text" name="serial_number" placeholder="Optional serial number"></div>
+        <div><label>Location Detail</label><input type="text" name="location" placeholder="Bay 4 / Level 2 / Line A"></div>
+        <div><label>Status</label><select name="status"><option value="ACTIVE">Active</option><option value="IN_SERVICE">In Service</option><option value="MAINTENANCE">Maintenance</option><option value="OUT_OF_SERVICE">Out of Service</option><option value="INACTIVE">Inactive</option></select></div>
+        <div class="wide-field"><label>Notes</label><input type="text" name="notes" placeholder="Optional notes"></div>
+        <div class="form-grid-action"><button type="submit">Add Asset</button></div>
+    </form>
+    <p class="muted-text">Need another asset type or site? Add it under Organization Settings.</p>
+</section>
+{% endif %}
+
+{% for asset in assets %}
+<section class="card asset-card">
+    <div class="asset-header">
+        <div>
+            <p class="section-label">{{ asset.asset_type }}</p>
+            <h3>{{ asset.code }}{% if asset.name %} — {{ asset.name }}{% endif %}</h3>
+            <p>{{ asset.site }}{% if asset.location %} · {{ asset.location }}{% endif %}</p>
+        </div>
+        <div class="asset-summary">
+            <span class="status status-good">{{ asset.status }}</span>
+            <strong>{{ asset.completion }}%</strong>
+            <span>Component coverage</span>
+        </div>
+    </div>
+
+    <div class="detail-grid asset-details">
+        <div><span>Serial</span><strong>{{ asset.serial_number or '-' }}</strong></div>
+        <div><span>Assigned</span><strong>{{ asset.total_assigned }} / {{ asset.total_required }}</strong></div>
+        <div><span>Notes</span><strong>{{ asset.notes or '-' }}</strong></div>
+    </div>
+
+    <div class="table-scroll">
+    <table>
+        <thead><tr><th>SKU</th><th>Item</th><th>Required</th><th>Assigned</th><th>Missing</th><th>Action</th></tr></thead>
+        <tbody>
+        {% for component in asset.components %}
+            <tr>
+                <td>{{ component.sku }}</td><td>{{ component.item_name }}</td><td>{{ component.required }}</td><td>{{ component.assigned }}</td><td>{{ component.missing }}</td>
+                <td>
+                    {% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
+                    <form method="post" action="/assets/components/{{ component.id }}/edit" class="inline-action-form"><input type="number" name="quantity_required" min="{{ component.assigned if component.assigned > 0 else 1 }}" value="{{ component.required }}" required><button type="submit">Update</button></form>
+                    {% endif %}
+                    {% if component.assigned > 0 and request.state.user.role in ['ADMIN', 'MANAGER', 'STAFF'] %}
+                    <form method="post" action="/assets/components/{{ component.id }}/return" class="mini-form">
+                        <input type="number" name="quantity" min="1" max="{{ component.assigned }}" value="1" required>
+                        <select name="storage_location_id" required>{% for location in storage_locations %}<option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>{% endfor %}</select>
+                        <input type="text" name="notes" placeholder="Optional return note">
+                        <button type="submit">Return to Inventory</button>
+                    </form>
+                    {% endif %}
+                    {% if component.assigned == 0 and request.state.user.role in ['ADMIN', 'MANAGER'] %}
+                    <form method="post" action="/assets/components/{{ component.id }}/remove" class="inline-action-form"><button type="submit">Remove</button></form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% else %}<tr><td colspan="6">No tracked components have been added to this asset.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    {% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
+    <div class="asset-component-form">
+        <h4>Add Tracked Component</h4>
+        <form method="post" action="/assets/{{ asset.id }}/components/add" class="inline-settings-form">
+            <div><label>Inventory Item</label><select name="item_id" required>{% for item in items %}<option value="{{ item.id }}">{{ item.sku }} - {{ item.name }}</option>{% endfor %}</select></div>
+            <div><label>Quantity Required</label><input type="number" name="quantity_required" min="1" required></div>
+            <div class="settings-action"><button type="submit">Add Component</button></div>
+        </form>
+    </div>
+    {% endif %}
+</section>
+{% else %}
+<section class="card empty-state"><h3>No assets yet</h3><p>Add equipment or operational units your organization wants to associate with inventory.</p></section>
+{% endfor %}
+{% endblock %}

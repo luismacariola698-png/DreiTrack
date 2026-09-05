@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Company Settings | DreiTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Company Settings</h2>
+        <p>Configure your company's sites, storage locations, asset types and user roles.</p>
+    </div>
+</div>
+
+<div class="settings-grid">
+    <section class="card settings-card">
+        <p class="section-label">COMPANY</p>
+        <h3>{{ organization.name }}</h3>
+        <p class="muted-text">Internal company identifier: {{ organization.slug }}</p>
+
+        <form method="post" action="/settings/organization" class="stack-form compact-form">
+            <label>Company Name</label>
+            <input type="text" name="name" value="{{ organization.name }}" required>
+            <button type="submit">Update Company</button>
+        </form>
+    </section>
+
+    <section class="card settings-card">
+        <p class="section-label">ACCOUNT</p>
+        <h3>Change My Password</h3>
+        <form method="post" action="/account/password" class="stack-form compact-form">
+            <label>Current Password</label>
+            <input type="password" name="current_password" required>
+            <label>New Password</label>
+            <input type="password" name="new_password" minlength="8" required>
+            <button type="submit">Change Password</button>
+        </form>
+    </section>
+</div>
+
+<section class="card settings-section">
+    <div class="settings-section-header">
+        <div>
+            <p class="section-label">SITES</p>
+            <h3>Company Sites</h3>
+            <p>Sites represent factories, offices, labs, workshops, stores or other operating facilities.</p>
+        </div>
+    </div>
+
+    <form method="post" action="/settings/sites/create" class="inline-settings-form">
+        <div><label>Code</label><input type="text" name="code" placeholder="SG-HQ" required></div>
+        <div><label>Name</label><input type="text" name="name" placeholder="Singapore HQ" required></div>
+        <div><label>Address</label><input type="text" name="address" placeholder="Optional"></div>
+        <div class="settings-action"><button type="submit">Add Site</button></div>
+    </form>
+
+    <div class="settings-list">
+        {% for site in sites %}
+        <div class="settings-list-row">
+            <div><strong>{{ site.code }}</strong><span>{{ site.name }}</span></div>
+            <div>{{ site.address or 'No address recorded' }}</div>
+            <span class="status status-good">{{ 'Active' if site.is_active else 'Inactive' }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="card settings-section">
+    <div class="settings-section-header">
+        <div>
+            <p class="section-label">STORAGE LOCATIONS</p>
+            <h3>Inventory Locations</h3>
+            <p>Stock movements are recorded against these locations so balances can be separated by site and store.</p>
+        </div>
+    </div>
+
+    <form method="post" action="/settings/locations/create" class="inline-settings-form four-col">
+        <div>
+            <label>Site</label>
+            <select name="site_id" required>
+                {% for site in sites %}<option value="{{ site.id }}">{{ site.code }} - {{ site.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div><label>Code</label><input type="text" name="code" placeholder="WH-A1" required></div>
+        <div><label>Name</label><input type="text" name="name" placeholder="Warehouse A1" required></div>
+        <div>
+            <label>Type</label>
+            <select name="location_type">
+                <option value="STORAGE">Storage</option>
+                <option value="WAREHOUSE">Warehouse</option>
+                <option value="STOCKROOM">Stockroom</option>
+                <option value="LAB">Lab</option>
+                <option value="WORKSHOP">Workshop</option>
+                <option value="OFFICE">Office</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </div>
+        <div class="settings-action"><button type="submit">Add Location</button></div>
+    </form>
+
+    <div class="settings-list">
+        {% for location in storage_locations %}
+        <div class="settings-list-row">
+            <div><strong>{{ location.code }}</strong><span>{{ location.name }}</span></div>
+            <div>
+                {% for site in sites %}{% if site.id == location.site_id %}{{ site.code }} - {{ site.name }}{% endif %}{% endfor %}
+            </div>
+            <span class="status status-good">{{ location.location_type }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="card settings-section">
+    <div class="settings-section-header">
+        <div>
+            <p class="section-label">ASSET TYPES</p>
+            <h3>Company Asset Types</h3>
+            <p>Each company decides what kinds of equipment it tracks.</p>
+        </div>
+    </div>
+
+    <form method="post" action="/settings/asset-types/create" class="inline-settings-form">
+        <div><label>Name</label><input type="text" name="name" placeholder="CNC Machine" required></div>
+        <div class="wide-field"><label>Description</label><input type="text" name="description" placeholder="Optional"></div>
+        <div class="settings-action"><button type="submit">Add Asset Type</button></div>
+    </form>
+
+    <div class="chip-list">
+        {% for asset_type in asset_types %}
+        <span class="config-chip">{{ asset_type.name }}</span>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="card settings-section">
+    <div class="settings-section-header">
+        <div>
+            <p class="section-label">USERS & ROLES</p>
+            <h3>Company Users</h3>
+            <p>Only administrators can create accounts. Roles control who may change operational records.</p>
+        </div>
+    </div>
+
+    <form method="post" action="/settings/users/create" class="inline-settings-form four-col">
+        <div><label>Name</label><input type="text" name="display_name" required></div>
+        <div><label>Email</label><input type="email" name="email" required></div>
+        <div><label>Temporary Password</label><input type="password" name="password" minlength="8" required></div>
+        <div>
+            <label>Role</label>
+            <select name="role">
+                {% for role in valid_roles %}<option value="{{ role }}">{{ role }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="settings-action"><button type="submit">Add User</button></div>
+    </form>
+
+    <div class="settings-list user-settings-list">
+        {% for user in users %}
+        <div class="settings-list-row">
+            <div><strong>{{ user.display_name }}</strong><span>{{ user.email }}</span></div>
+            <form method="post" action="/settings/users/{{ user.id }}/role" class="role-form">
+                <select name="role">
+                    {% for role in valid_roles %}
+                    <option value="{{ role }}" {% if user.role == role %}selected{% endif %}>{{ role }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Update Role</button>
+            </form>
+            <form method="post" action="/settings/users/{{ user.id }}/active" class="role-form">
+                <input type="hidden" name="is_active" value="{{ '0' if user.is_active else '1' }}">
+                <button type="submit" {% if user.id == request.state.user.id and user.is_active %}disabled title="You cannot deactivate your own account"{% endif %}>
+                    {{ 'Deactivate' if user.is_active else 'Activate' }}
+                </button>
+            </form>
+            <span class="status {{ 'status-good' if user.is_active else 'status-warning' }}">{{ 'Active' if user.is_active else 'Inactive' }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="card security-note">
+    <p class="section-label">ROLE SUMMARY</p>
+    <h3>Access Model</h3>
+    <div class="role-grid">
+        <div><strong>ADMIN</strong><span>Company settings, users, inventory, assets, procurement and approvals.</span></div>
+        <div><strong>MANAGER</strong><span>Inventory management, assets, procurement, stock audits and request approvals.</span></div>
+        <div><strong>STAFF</strong><span>Stock movements, requests, collections and asset returns.</span></div>
+        <div><strong>VIEWER</strong><span>Read-only access to operational pages and Drei intelligence.</span></div>
+    </div>
+</div>
+{% endblock %}

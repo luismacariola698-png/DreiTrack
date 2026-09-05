@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | DreiTrack{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="section-label">{{ request.state.organization.name | upper }}</p>
+        <h2>Dashboard</h2>
+        <p>Organization-scoped inventory, requests, procurement, sites and asset activity.</p>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <a href="/inventory" class="dashboard-link-card"><div class="card metric-card"><span>Total Items</span><strong>{{ total_items }}</strong><p>Inventory records</p></div></a>
+    <a href="/inventory" class="dashboard-link-card"><div class="card metric-card"><span>Physical Stock</span><strong>{{ total_physical_stock }}</strong><p>Units recorded across all locations</p></div></a>
+    <a href="/requests" class="dashboard-link-card"><div class="card metric-card"><span>Reserved</span><strong>{{ total_reserved_stock }}</strong><p>Units reserved for approved requests</p></div></a>
+    <a href="/inventory" class="dashboard-link-card"><div class="card metric-card"><span>Low Stock</span><strong>{{ low_stock_count }}</strong><p>Items at or below minimum</p></div></a>
+    <a href="/requests" class="dashboard-link-card"><div class="card metric-card"><span>Pending Requests</span><strong>{{ pending_requests }}</strong><p>Waiting for approval</p></div></a>
+    <a href="/requests" class="dashboard-link-card"><div class="card metric-card"><span>Awaiting Collection</span><strong>{{ approved_requests }}</strong><p>Approved requests</p></div></a>
+    <a href="/orders" class="dashboard-link-card"><div class="card metric-card"><span>Open Orders</span><strong>{{ open_orders }}</strong><p>Ordered or partially received</p></div></a>
+    <a href="/orders" class="dashboard-link-card"><div class="card metric-card"><span>Overdue Orders</span><strong>{{ overdue_orders }}</strong><p>{% if overdue_orders %}Requires procurement review{% else %}No overdue orders{% endif %}</p></div></a>
+    <a href="/assets" class="dashboard-link-card"><div class="card metric-card"><span>Assets</span><strong>{{ total_assets }}</strong><p>Tracked equipment and units</p></div></a>
+    {% if request.state.user.role == 'ADMIN' %}
+    <a href="/settings" class="dashboard-link-card"><div class="card metric-card"><span>Sites</span><strong>{{ total_sites }}</strong><p>Organization facilities</p></div></a>
+    <a href="/settings" class="dashboard-link-card"><div class="card metric-card"><span>Storage Locations</span><strong>{{ total_locations }}</strong><p>Inventory locations</p></div></a>
+    {% endif %}
+</div>
+
+<section class="card table-card">
+    <div class="table-card-header">
+        <div><p class="section-label">ATTENTION</p><h3>Low Stock Items</h3><p>Items that may require replenishment.</p></div>
+    </div>
+    <div class="table-scroll">
+        <table>
+            <thead><tr><th>SKU</th><th>Item</th><th>Available</th><th>Minimum</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for item in low_stock_items %}
+                <tr><td>{{ item.sku }}</td><td><a href="/inventory/{{ item.id }}"><strong>{{ item.name }}</strong></a></td><td>{{ item.available }}</td><td>{{ item.minimum }}</td><td><span class="status status-danger">Low Stock</span></td></tr>
+            {% else %}
+                <tr><td colspan="5">No low-stock items right now.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

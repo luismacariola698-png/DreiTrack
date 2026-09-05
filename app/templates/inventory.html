@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory | DreiTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Inventory</h2>
+        <p>View organization-wide stock with a default storage location for each item.</p>
+    </div>
+</div>
+
+{% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
+<div class="card form-card">
+    <p class="section-label">NEW ITEM</p>
+    <h3>Add Inventory Item</h3>
+
+    <form method="post" action="/inventory/create" class="form-grid">
+        <div>
+            <label>SKU</label>
+            <input type="text" name="sku" placeholder="MOTOR-001" required>
+        </div>
+        <div>
+            <label>Item Name</label>
+            <input type="text" name="name" placeholder="Servo Motor" required>
+        </div>
+        <div>
+            <label>Category</label>
+            <input type="text" name="category" placeholder="Motors" required>
+        </div>
+        <div>
+            <label>Default Storage Location</label>
+            <select name="storage_location_id" required>
+                {% for location in storage_locations %}
+                <option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Minimum Stock</label>
+            <input type="number" name="min_stock" min="0" value="0">
+        </div>
+        <div>
+            <label>Supplier</label>
+            <input type="text" name="supplier" placeholder="Optional supplier">
+        </div>
+        <div>
+            <label>Unit Cost</label>
+            <input type="number" name="unit_cost" min="0" step="0.01" placeholder="25.00">
+        </div>
+        <div>
+            <label>Lead Time (Days)</label>
+            <input type="number" name="lead_time_days" min="0" value="14">
+        </div>
+        <div>
+            <label>Lead Time Mode</label>
+            <select name="lead_time_mode">
+                <option value="AUTOMATIC">Automatic</option>
+                <option value="CONFIGURED">Configured</option>
+            </select>
+        </div>
+        <div class="form-grid-action">
+            <button type="submit">Add Item</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<div class="card table-card">
+    <div class="table-card-header">
+        <div>
+            <p class="section-label">CURRENT STOCK</p>
+            <h3>{{ request.state.organization.name }} Inventory</h3>
+        </div>
+        <span class="muted-text">{{ items | length }} item(s)</span>
+    </div>
+
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Default Location</th>
+                    <th>Physical</th>
+                    <th>Reserved</th>
+                    <th>Available</th>
+                    <th>On Order</th>
+                    <th>Minimum</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.sku }}</td>
+                    <td><a href="/inventory/{{ item.id }}"><strong>{{ item.name }}</strong></a></td>
+                    <td>{{ item.category }}</td>
+                    <td>{{ item.location }}</td>
+                    <td>{{ item.physical_stock }}</td>
+                    <td>{{ item.reserved_stock }}</td>
+                    <td>{{ item.available_stock }}</td>
+                    <td>{{ item.on_order }}</td>
+                    <td>{{ item.minimum_stock }}</td>
+                    <td>
+                        {% if item.available_stock <= item.minimum_stock %}
+                        <span class="status status-danger">Low Stock</span>
+                        {% else %}
+                        <span class="status status-good">In Stock</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10">No inventory items found for this organization.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

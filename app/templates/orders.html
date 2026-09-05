@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Orders / Procurement | DreiTrack{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><h2>Orders / Procurement</h2><p>Create purchase orders, track delivery commitments and receive inventory into a specific storage location.</p></div>
+</div>
+
+{% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
+<section class="card form-card">
+    <p class="section-label">NEW PURCHASE ORDER</p>
+    <h3>Create Purchase Order</h3>
+    <p>Creating a PO does not change stock. Inventory increases only when a receipt is recorded.</p>
+    <form method="post" action="/orders/create" class="form-grid">
+        <div><label>PO Number</label><input type="text" name="po_number" placeholder="PO-2026-001" required></div>
+        <div>
+            <label>Inventory Item</label>
+            <select name="item_id" id="po_item_id" required>
+                {% for item in items %}
+                <option value="{{ item.id }}" data-supplier="{{ item.supplier or '' }}" data-unit-cost="{{ item.unit_cost if item.unit_cost is not none else '' }}">{{ item.sku }} - {{ item.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div><label>Supplier</label><input type="text" name="supplier" id="po_supplier" required></div>
+        <div><label>Quantity Ordered</label><input type="number" name="quantity" id="po_quantity" min="1" required></div>
+        <div><label>Unit Cost</label><input type="number" name="unit_cost" id="po_unit_cost" min="0" step="0.01"></div>
+        <div><label>Expected Delivery Date</label><input type="date" name="expected_delivery_date"></div>
+        <div class="wide-field"><label>Order Notes</label><input type="text" name="notes" placeholder="Optional notes"></div>
+        <div class="form-grid-action"><button type="submit">Create Purchase Order</button></div>
+    </form>
+    <p class="muted-text">Created by {{ request.state.user.display_name }}.</p>
+</section>
+{% endif %}
+
+<section class="card table-card">
+    <div class="table-card-header"><div><p class="section-label">PROCUREMENT LEDGER</p><h3>Purchase Orders</h3></div></div>
+    <div class="table-scroll">
+    <table>
+        <thead><tr><th>PO</th><th>Supplier</th><th>Item</th><th>Ordered</th><th>Received</th><th>Outstanding</th><th>Expected</th><th>Status</th><th>Receive</th></tr></thead>
+        <tbody>
+        {% for order in orders %}
+            <tr>
+                <td><strong>{{ order.po_number }}</strong></td>
+                <td>{{ order.supplier }}</td>
+                <td>{{ order.item_name }}</td>
+                <td>{{ order.quantity_ordered }}</td>
+                <td>{{ order.quantity_received }}</td>
+                <td>{{ order.quantity_outstanding }}</td>
+                <td>{{ order.expected_delivery_date.strftime('%d %b %Y') if order.expected_delivery_date else '-' }}</td>
+                <td>
+                    {% if order.display_status == 'OVERDUE' %}<span class="status status-danger">Overdue</span>
+                    {% elif order.display_status == 'RECEIVED' %}<span class="status status-good">Received</span>
+                    {% else %}<span class="status status-warning">{{ order.display_status }}</span>{% endif %}
+                </td>
+                <td>
+                    {% if order.quantity_outstanding > 0 and request.state.user.role in ['ADMIN', 'MANAGER'] %}
+                    <form method="post" action="/orders/receive" class="mini-form">
+                        <input type="hidden" name="order_line_id" value="{{ order.line_id }}">
+                        <input type="number" name="quantity" min="1" max="{{ order.quantity_outstanding }}" value="{{ order.quantity_outstanding }}" required>
+                        <select name="storage_location_id" required>{% for location in storage_locations %}<option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>{% endfor %}</select>
+                        <input type="text" name="notes" placeholder="Optional receipt note">
+                        <button type="submit">Receive</button>
+                    </form>
+                    {% else %}-{% endif %}
+                </td>
+            </tr>
+        {% else %}<tr><td colspan="9">No purchase orders created yet.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const itemSelect = document.getElementById('po_item_id');
+    const quantityInput = document.getElementById('po_quantity');
+    const supplierInput = document.getElementById('po_supplier');
+    const unitCostInput = document.getElementById('po_unit_cost');
+    if (!itemSelect || !supplierInput || !unitCostInput) return;
+    function fillItemDetails() {
+        const option = itemSelect.options[itemSelect.selectedIndex];
+        if (!option) return;
+        supplierInput.value = option.dataset.supplier || '';
+        unitCostInput.value = option.dataset.unitCost || '';
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('item_id')) itemSelect.value = params.get('item_id');
+    fillItemDetails();
+    if (params.get('quantity') && quantityInput) quantityInput.value = params.get('quantity');
+    itemSelect.addEventListener('change', fillItemDetails);
+});
+</script>
+{% endblock %}
