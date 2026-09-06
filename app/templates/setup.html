@@ -15,25 +15,19 @@
             <p>Configure this private installation for one company.</p>
         </div>
     </div>
-
     <div class="auth-card">
         <p class="section-label">FIRST-TIME SETUP</p>
         <h2>Create your company</h2>
         <p>This setup runs once. Afterwards, only administrators can create user accounts.</p>
-
         <form method="post" action="/setup" class="stack-form">
             <label>Company Name</label>
             <input type="text" name="organization_name" placeholder="Example Manufacturing Pte Ltd" required>
-
             <label>Administrator Name</label>
             <input type="text" name="admin_name" required>
-
             <label>Administrator Email</label>
             <input type="email" name="email" required>
-
             <label>Password</label>
             <input type="password" name="password" minlength="8" required>
-
             <button type="submit">Set Up DreiTrack</button>
         </form>
     </div>

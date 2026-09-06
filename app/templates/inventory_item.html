@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
 {% block title %}{{ item.name }} | DreiTrack{% endblock %}
-
 {% block content %}
 <div class="page-header">
     <div>
@@ -10,7 +8,6 @@
     </div>
     <div><a href="/inventory">Back to Inventory</a></div>
 </div>
-
 <div class="detail-layout">
     <section class="card detail-card">
         <p class="section-label">ITEM DETAILS</p>
@@ -24,7 +21,6 @@
             <div><span>Lead Time</span><strong>{{ item.lead_time_days }} days</strong></div>
         </div>
     </section>
-
     <section class="card detail-card">
         <p class="section-label">ORGANIZATION-WIDE STOCK</p>
         <h3>Stock Position</h3>
@@ -47,7 +43,6 @@
         </div>
     </section>
 </div>
-
 <section class="card table-card">
     <div class="table-card-header">
         <div>
@@ -73,7 +68,6 @@
         </table>
     </div>
 </section>
-
 {% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
 <section class="card form-card">
     <p class="section-label">ITEM SETTINGS</p>
@@ -103,7 +97,6 @@
         <div class="form-grid-action"><button type="submit">Update Item</button></div>
     </form>
 </section>
-
 <section class="card form-card">
     <p class="section-label">AUDIT</p>
     <h3>Location Stock Adjustment</h3>
@@ -125,7 +118,6 @@
     <p class="muted-text">Recorded by {{ request.state.user.display_name }} automatically.</p>
 </section>
 {% endif %}
-
 <section class="card table-card">
     <div class="table-card-header">
         <div>

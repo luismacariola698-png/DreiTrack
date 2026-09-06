@@ -1,35 +1,58 @@
-# DreiTrack v0.3 Migration Summary
+# DreiTrack v0.4 Migration Summary
 
-## Deployment model
+Version 0.4 extends the v0.3 private single-company build to approved computers on the same private company LAN.
 
-DreiTrack now uses a private single-company deployment model:
+## Added
 
-- one installation = one company
-- first-time setup runs once
-- `/register` has been removed
-- only administrators can create users
-- operational and API pages require authentication
-- unauthenticated API documentation is no longer exposed by the authentication middleware
+- `app/network.py` private-network helpers
+- Private/public numeric source-IP classification
+- Baseline same-origin protection for unsafe browser requests
+- Per-installation generated session signing secret fallback
+- Administrator network information in Company Settings
+- `Enable Private Network Access.bat/.ps1`
+- `Disable Private Network Access.bat/.ps1`
+- `Show Private Network Address.bat`
+- `network_info.py`
+- Launcher `logs/network-info.txt`
+- Private-LAN deployment documentation
 
-The existing `Organization` model remains internally so all operational records continue to have an explicit company boundary. Existing v0.2 databases with one organization require no schema migration.
+## Private LAN activation
 
-## User administration
+The default remains safe/local:
 
-Administrators can create users, change roles, activate accounts and deactivate accounts. DreiTrack prevents an administrator from deactivating their own account and prevents removal of the last active administrator.
+```text
+127.0.0.1:8000
+```
 
-## Windows launcher
+Running `Enable Private Network Access.bat` changes the launcher bind to:
 
-Added:
+```text
+0.0.0.0:8000
+```
 
-- `Setup DreiTrack.bat` — one-time virtual environment/dependency setup
-- `DreiTrack.vbs` — silent normal launcher
-- `launcher.py` — starts Uvicorn and Ollama without a terminal window
-- `launcher_settings.json` — local launcher settings
-- `Enable Auto Start.vbs` — starts DreiTrack at Windows sign-in
-- `Disable Auto Start.vbs` — removes automatic startup
+and creates a Windows Firewall rule restricted to:
 
-The default launcher binds to `127.0.0.1`, keeping the app local to the host computer until private-network hardening is completed.
+```text
+Profile: Private
+RemoteAddress: LocalSubnet
+Protocol: TCP
+Port: configured DreiTrack port
+```
 
-## Version
+The firewall helper requires Windows administrator permission.
 
-Application version updated from 0.2.0 to 0.3.0.
+## Private LAN deactivation
+
+Running `Disable Private Network Access.bat` removes the firewall rule and restores `127.0.0.1`.
+
+## Session secret change
+
+v0.3 could use a shared development fallback when `DREITRACK_SESSION_SECRET` was unset.
+
+v0.4 instead generates a random secret once per installation and stores it in `.dreitrack_session_secret`. The file is Git-ignored.
+
+## Security scope
+
+This version is designed for a trusted private office/company LAN. It is not intended for direct public-internet exposure.
+
+Plain HTTP is still used by default, so private HTTPS/VPN access remains part of the next hardening phase.

@@ -18,7 +18,6 @@
                 </div>
             </div>
         </div>
-
         {% if request.state.organization %}
         <div class="workspace-card">
             <span class="workspace-label">Company</span>
@@ -26,7 +25,6 @@
             <span>{{ request.state.user.display_name }} · {{ request.state.user.role }}</span>
         </div>
         {% endif %}
-
         <nav class="nav">
             <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
             <a href="/inventory" class="{% if request.url.path.startswith('/inventory') %}active{% endif %}">Inventory</a>
@@ -35,12 +33,10 @@
             <a href="/assets" class="{% if request.url.path.startswith('/assets') %}active{% endif %}">Assets</a>
             <a href="/orders" class="{% if request.url.path.startswith('/orders') %}active{% endif %}">Orders / Procurement</a>
             <a href="/insights" class="{% if request.url.path.startswith('/insights') %}active{% endif %}">Inventory Intelligence</a>
-
             {% if request.state.user and request.state.user.role == 'ADMIN' %}
             <a href="/settings" class="{% if request.url.path.startswith('/settings') %}active{% endif %}">Company Settings</a>
             {% endif %}
         </nav>
-
         <div class="sidebar-footer">
             {% if request.state.user %}
             <form method="post" action="/logout">
@@ -50,7 +46,6 @@
             <p>Physical Inventory Operations</p>
         </div>
     </aside>
-
     <main class="main-content">
         <div class="content-shell">
             {% block content %}{% endblock %}

@@ -27,7 +27,14 @@ if errorlevel 1 goto :error
 
 echo.
 echo Setup complete.
-echo From now on, double-click DreiTrack.vbs to start the application.
+echo.
+echo For this computer only:
+echo   Double-click DreiTrack.vbs to start the application.
+echo.
+echo To allow other approved PCs on the same private company network:
+echo   Double-click Enable Private Network Access.bat once.
+echo   Approve the Windows administrator prompt.
+echo   Then restart DreiTrack.vbs.
 echo.
 pause
 exit /b 0

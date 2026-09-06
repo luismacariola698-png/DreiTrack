@@ -1,20 +1,22 @@
 {% extends "base.html" %}
-
 {% block title %}Inventory | DreiTrack{% endblock %}
-
 {% block content %}
 <div class="page-header">
     <div>
         <h2>Inventory</h2>
         <p>View organization-wide stock with a default storage location for each item.</p>
     </div>
-</div>
 
+    {% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
+    <form method="get" action="/inventory/import">
+        <button type="submit">Import Inventory</button>
+    </form>
+    {% endif %}
+</div>
 {% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
 <div class="card form-card">
     <p class="section-label">NEW ITEM</p>
     <h3>Add Inventory Item</h3>
-
     <form method="post" action="/inventory/create" class="form-grid">
         <div>
             <label>SKU</label>
@@ -65,7 +67,6 @@
     </form>
 </div>
 {% endif %}
-
 <div class="card table-card">
     <div class="table-card-header">
         <div>
@@ -74,7 +75,6 @@
         </div>
         <span class="muted-text">{{ items | length }} item(s)</span>
     </div>
-
     <div class="table-scroll">
         <table>
             <thead>

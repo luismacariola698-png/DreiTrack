@@ -2,7 +2,6 @@
 {% block title %}Requests | DreiTrack{% endblock %}
 {% block content %}
 <div class="page-header"><div><h2>Stock Requests</h2><p>Request inventory from a specific storage location and optionally associate it with an asset.</p></div></div>
-
 {% if request.state.user.role in ['ADMIN', 'MANAGER', 'STAFF'] %}
 <section class="card form-card">
     <p class="section-label">NEW REQUEST</p><h3>Create Stock Request</h3>
@@ -18,7 +17,6 @@
     <p class="muted-text">Requested by {{ request.state.user.display_name }}.</p>
 </section>
 {% endif %}
-
 <section class="card table-card">
     <div class="table-card-header"><div><p class="section-label">REQUEST LEDGER</p><h3>Request History</h3></div></div>
     <div class="table-scroll">

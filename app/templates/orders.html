@@ -4,7 +4,6 @@
 <div class="page-header">
     <div><h2>Orders / Procurement</h2><p>Create purchase orders, track delivery commitments and receive inventory into a specific storage location.</p></div>
 </div>
-
 {% if request.state.user.role in ['ADMIN', 'MANAGER'] %}
 <section class="card form-card">
     <p class="section-label">NEW PURCHASE ORDER</p>
@@ -30,7 +29,6 @@
     <p class="muted-text">Created by {{ request.state.user.display_name }}.</p>
 </section>
 {% endif %}
-
 <section class="card table-card">
     <div class="table-card-header"><div><p class="section-label">PROCUREMENT LEDGER</p><h3>Purchase Orders</h3></div></div>
     <div class="table-scroll">
@@ -68,7 +66,6 @@
     </table>
     </div>
 </section>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const itemSelect = document.getElementById('po_item_id');

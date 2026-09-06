@@ -1,164 +1,27 @@
 from typing import Any
 
-
-# =========================================================
-# CONTEXT LIMITS
-# =========================================================
-
 MAX_REASON_LENGTH = 500
-
 MAX_ANOMALY_LENGTH = 500
-
 MAX_ANOMALIES_PER_ITEM = 10
 
 
-# =========================================================
-# SAFE TEXT CONVERSION
-# =========================================================
-
-def clean_context_text(
-    value: Any,
-    max_length: int = 500,
-) -> str:
-    """
-    Convert DreiTrack data to bounded plain text
-    before supplying it to the local model.
-    """
-
-    if value is None:
-
-        return "Not available"
-
-
-    text = str(
-        value
-    ).strip()
-
-
+def clean_context_text(value: Any, max_length: int = 500) -> str:
+    text = str(value).strip() if value is not None else ""
     if not text:
-
         return "Not available"
+    return text if len(text) <= max_length else text[:max_length] + "..."
 
 
-    if len(text) > max_length:
+def build_item_context(*, insight: dict, anomalies: list[dict]) -> str:
+    reasons = [f"- {clean_context_text(r, MAX_REASON_LENGTH)}" for r in insight.get("reasons", [])]
+    if not reasons:
+        reasons = ["- No supporting reasons were recorded."]
 
-        text = (
-            text[:max_length]
-            + "..."
-        )
-
-
-    return text
-
-
-# =========================================================
-# BUILD ITEM CONTEXT
-# =========================================================
-
-def build_item_context(
-    *,
-    insight: dict,
-    anomalies: list[dict],
-) -> str:
-    """
-    Convert verified DreiTrack planning and anomaly
-    data into a bounded context block for Drei.
-
-    The context contains data, not instructions.
-    """
-
-
-    # -----------------------------------------------------
-    # PLANNING REASONS
-    # -----------------------------------------------------
-
-    reasons = insight.get(
-        "reasons",
-        []
-    )
-
-
-    reason_lines = []
-
-
-    for reason in reasons:
-
-        reason_lines.append(
-            (
-                "- "
-                + clean_context_text(
-                    reason,
-                    MAX_REASON_LENGTH,
-                )
-            )
-        )
-
-
-    if not reason_lines:
-
-        reason_lines.append(
-            "- No supporting reasons were recorded."
-        )
-
-
-    # -----------------------------------------------------
-    # ANOMALIES
-    # -----------------------------------------------------
-
-    anomaly_lines = []
-
-
-    for anomaly in anomalies[
-        :MAX_ANOMALIES_PER_ITEM
-    ]:
-
-        severity = (
-            clean_context_text(
-                anomaly.get(
-                    "severity"
-                )
-            )
-        )
-
-
-        title = (
-            clean_context_text(
-                anomaly.get(
-                    "title"
-                )
-            )
-        )
-
-
-        summary = (
-            clean_context_text(
-                anomaly.get(
-                    "summary"
-                ),
-                MAX_ANOMALY_LENGTH,
-            )
-        )
-
-
-        anomaly_lines.append(
-            (
-                f"- [{severity}] "
-                f"{title}: "
-                f"{summary}"
-            )
-        )
-
-
-    if not anomaly_lines:
-
-        anomaly_lines.append(
-            "- No anomaly thresholds were triggered."
-        )
-
-
-    # -----------------------------------------------------
-    # VERIFIED CONTEXT
-    # -----------------------------------------------------
+    anomaly_lines = [
+        f"- [{clean_context_text(a.get('severity'))}] {clean_context_text(a.get('title'))}: "
+        f"{clean_context_text(a.get('summary'), MAX_ANOMALY_LENGTH)}"
+        for a in anomalies[:MAX_ANOMALIES_PER_ITEM]
+    ] or ["- No anomaly thresholds were triggered."]
 
     return f"""
 <dreitrack_verified_context>
@@ -199,13 +62,10 @@ Reorder recommended: {insight.get("reorder_recommended")}
 Confidence: {clean_context_text(insight.get("confidence"))}
 
 DREITRACK RECOMMENDATION
-{clean_context_text(
-    insight.get("recommendation"),
-    1000,
-)}
+{clean_context_text(insight.get("recommendation"), 1000)}
 
 SUPPORTING FACTORS
-{chr(10).join(reason_lines)}
+{chr(10).join(reasons)}
 
 DETECTED ANOMALIES
 {chr(10).join(anomaly_lines)}

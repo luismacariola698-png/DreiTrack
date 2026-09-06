@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Import Inventory | DreiTrack{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Import Inventory</h2>
+        <p>Upload an existing CSV or Excel inventory list and review it before anything is added to DreiTrack.</p>
+    </div>
+
+    <form method="get" action="/inventory">
+        <button type="submit">Back to Inventory</button>
+    </form>
+</div>
+
+
+<div class="card form-card">
+    <p class="section-label">UPLOAD INVENTORY</p>
+    <h3>Select Inventory File</h3>
+
+    <p class="muted-text">
+        Supported formats: CSV and Excel (.xlsx).
+        Nothing will be added to inventory during this preview.
+    </p>
+
+    {% if error %}
+    <p class="status status-danger">{{ error }}</p>
+    {% endif %}
+
+    <form
+        method="post"
+        action="/inventory/import/preview"
+        enctype="multipart/form-data"
+    >
+        <div>
+            <label>Inventory File</label>
+            <input
+                type="file"
+                name="file"
+                accept=".csv,.xlsx"
+                required
+            >
+        </div>
+
+        <div class="form-grid-action">
+            <button type="submit">Preview File</button>
+        </div>
+    </form>
+</div>
+
+
+{% if preview %}
+
+<div class="card table-card">
+    <div class="table-card-header">
+        <div>
+            <p class="section-label">COLUMN MAPPING</p>
+            <h3>{{ preview.filename }}</h3>
+        </div>
+
+        <span class="muted-text">
+            {{ preview.total_rows }} data row(s)
+        </span>
+    </div>
+
+    <form method="post" action="/inventory/import/commit">
+
+        <input
+            type="hidden"
+            name="token"
+            value="{{ preview.token }}"
+        >
+
+        <input
+            type="hidden"
+            name="filename"
+            value="{{ preview.filename }}"
+        >
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Uploaded Column</th>
+                        <th>DreiTrack Field</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for header in preview.headers %}
+                    {% set suggested = preview.mapping.get(header) %}
+
+                    <tr>
+                        <td>
+                            <strong>{{ header }}</strong>
+                        </td>
+
+                        <td>
+                            <select name="map_{{ loop.index0 }}">
+                                <option value="">Ignore this column</option>
+
+                                {% for field, label in import_fields.items() %}
+                                <option
+                                    value="{{ field }}"
+                                    {% if suggested == field %}selected{% endif %}
+                                >
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="form-grid">
+
+            <div>
+                <label>Default Category</label>
+
+                <input
+                    type="text"
+                    name="default_category"
+                    value="Imported"
+                    required
+                >
+
+                <p class="muted-text">
+                    Used when the spreadsheet does not provide a category.
+                </p>
+            </div>
+
+
+            <div>
+                <label>Default Storage Location</label>
+
+                <select
+                    name="default_storage_location_id"
+                    required
+                >
+                    {% for location in storage_locations %}
+                    <option value="{{ location.id }}">
+                        {{ location.code }} - {{ location.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <p class="muted-text">
+                    Used when the spreadsheet does not provide a storage location.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="form-grid-action">
+            <button type="button" disabled>
+                Import will be enabled after validation is added
+            </button>
+        </div>
+
+    </form>
+</div>
+
+
+<div class="card table-card">
+    <div class="table-card-header">
+        <div>
+            <p class="section-label">FILE PREVIEW</p>
+            <h3>Inventory Rows</h3>
+        </div>
+
+        <span class="muted-text">
+            Showing up to 25 rows
+        </span>
+    </div>
+
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    {% for header in preview.headers %}
+                    <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in preview.rows %}
+                <tr>
+                    {% for value in row %}
+                    <td>{{ value }}</td>
+                    {% endfor %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{{ preview.headers | length }}">
+                        No data rows found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

@@ -5,9 +5,8 @@
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
 
-# Local databases
+# Local database
 dreitrack.db
 *.db
 
@@ -15,23 +14,25 @@ dreitrack.db
 .env
 .env.*
 !.env.example
-.dreitrack_session_secret
 
-# Editors
+# VS Code
 .vscode/
-.idea/
 
-# Operating system files
+# OS files
 .DS_Store
 Thumbs.db
 
-# Runtime files
+# Temporary files
 *.log
 *.tmp
-logs/
-
-# Local migration / development artifacts
+# Local migration / scan artifacts
 *_scan.txt
 *_before_assets_*.db
 *_before_multicompany_*.db
 *_pretest*.db
+
+# Runtime launcher logs / PID files
+logs/
+
+# Per-installation generated session signing secret
+.dreitrack_session_secret

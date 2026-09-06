@@ -7,7 +7,6 @@
         <p>Record location-aware inventory movements for {{ request.state.organization.name }}.</p>
     </div>
 </div>
-
 {% if request.state.user.role in ['ADMIN', 'MANAGER', 'STAFF'] %}
 <div class="two-column-grid">
     <section class="card form-card">
@@ -35,7 +34,6 @@
             <p class="muted-text">Recorded by {{ request.state.user.display_name }}.</p>
         </form>
     </section>
-
     <section class="card form-card">
         <p class="section-label">STOCK OUT</p>
         <h3>Issue Inventory</h3>
@@ -55,7 +53,6 @@
     </section>
 </div>
 {% endif %}
-
 {% if request.state.user.role in ['ADMIN', 'MANAGER', 'STAFF'] %}
 <section class="card form-card">
     <p class="section-label">INTERNAL TRANSFER</p>
@@ -72,7 +69,6 @@
     </form>
 </section>
 {% endif %}
-
 <section class="card table-card">
     <div class="table-card-header"><div><p class="section-label">LEDGER</p><h3>Movement History</h3></div></div>
     <div class="table-scroll">
