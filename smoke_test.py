@@ -1,4 +1,4 @@
-"""Non-destructive DreiTrack v0.4.1 installation and private-LAN smoke test."""
+"""Non-destructive DreiTrack v0.4.3 installation and private-LAN smoke test."""
 
 from __future__ import annotations
 
@@ -91,4 +91,4 @@ secret_one = session_secret()
 secret_two = session_secret()
 require(bool(secret_one) and secret_one == secret_two and len(secret_one) >= 40, "installation session secret is not stable/strong")
 print("OK: per-installation session secret")
-print("DreiTrack v0.4.1 private-LAN smoke test passed.")
+print("DreiTrack v0.4.3 private-LAN smoke test passed.")

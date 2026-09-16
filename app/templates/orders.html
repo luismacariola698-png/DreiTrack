@@ -32,7 +32,7 @@
 <section class="card table-card">
     <div class="table-card-header"><div><p class="section-label">PROCUREMENT LEDGER</p><h3>Purchase Orders</h3></div></div>
     <div class="table-scroll">
-    <table>
+    <table class="mobile-card-table">
         <thead><tr><th>PO</th><th>Supplier</th><th>Item</th><th>Ordered</th><th>Received</th><th>Outstanding</th><th>Expected</th><th>Status</th><th>Receive</th></tr></thead>
         <tbody>
         {% for order in orders %}
@@ -41,27 +41,94 @@
                 <td>{{ order.supplier }}</td>
                 <td>{{ order.item_name }}</td>
                 <td>{{ order.quantity_ordered }}</td>
-                <td>{{ order.quantity_received }}</td>
-                <td>{{ order.quantity_outstanding }}</td>
-                <td>{{ order.expected_delivery_date.strftime('%d %b %Y') if order.expected_delivery_date else '-' }}</td>
-                <td>
-                    {% if order.display_status == 'OVERDUE' %}<span class="status status-danger">Overdue</span>
-                    {% elif order.display_status == 'RECEIVED' %}<span class="status status-good">Received</span>
-                    {% else %}<span class="status status-warning">{{ order.display_status }}</span>{% endif %}
-                </td>
-                <td>
-                    {% if order.quantity_outstanding > 0 and request.state.user.role in ['ADMIN', 'MANAGER'] %}
-                    <form method="post" action="/orders/receive" class="mini-form">
-                        <input type="hidden" name="order_line_id" value="{{ order.line_id }}">
-                        <input type="number" name="quantity" min="1" max="{{ order.quantity_outstanding }}" value="{{ order.quantity_outstanding }}" required>
-                        <select name="storage_location_id" required>{% for location in storage_locations %}<option value="{{ location.id }}">{{ location.code }} - {{ location.name }}</option>{% endfor %}</select>
-                        <input type="text" name="notes" placeholder="Optional receipt note">
-                        <button type="submit">Receive</button>
-                    </form>
-                    {% else %}-{% endif %}
-                </td>
-            </tr>
-        {% else %}<tr><td colspan="9">No purchase orders created yet.</td></tr>{% endfor %}
+                <tr>
+    <td data-label="PO">
+        <strong>{{ order.po_number }}</strong>
+    </td>
+
+    <td data-label="Supplier">
+        {{ order.supplier }}
+    </td>
+
+    <td data-label="Item">
+        {{ order.item_name }}
+    </td>
+
+    <td data-label="Ordered">
+        {{ order.quantity_ordered }}
+    </td>
+
+    <td data-label="Received">
+        {{ order.quantity_received }}
+    </td>
+
+    <td data-label="Outstanding">
+        {{ order.quantity_outstanding }}
+    </td>
+
+    <td data-label="Expected">
+        {{ order.expected_delivery_date.strftime('%d %b %Y') if order.expected_delivery_date else '-' }}
+    </td>
+
+    <td data-label="Status">
+        {% if order.display_status == 'OVERDUE' %}
+            <span class="status status-danger">Overdue</span>
+        {% elif order.display_status == 'RECEIVED' %}
+            <span class="status status-good">Received</span>
+        {% else %}
+            <span class="status status-warning">{{ order.display_status }}</span>
+        {% endif %}
+    </td>
+
+    <td data-label="Receive">
+        {% if order.quantity_outstanding > 0 and request.state.user.role in ['ADMIN', 'MANAGER'] %}
+        <form method="post" action="/orders/receive" class="mini-form">
+            <input
+                type="hidden"
+                name="order_line_id"
+                value="{{ order.line_id }}"
+            >
+
+            <input
+                type="number"
+                name="quantity"
+                min="1"
+                max="{{ order.quantity_outstanding }}"
+                value="{{ order.quantity_outstanding }}"
+                required
+            >
+
+            <select name="storage_location_id" required>
+                {% for location in storage_locations %}
+                <option value="{{ location.id }}">
+                    {{ location.code }} - {{ location.name }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <input
+                type="text"
+                name="notes"
+                placeholder="Optional receipt note"
+            >
+
+            <button type="submit">
+                Receive
+            </button>
+        </form>
+
+        {% else %}
+            -
+        {% endif %}
+    </td>
+</tr>
+        {% else %}
+<tr class="mobile-table-empty">
+    <td colspan="9">
+        No purchase orders created yet.
+    </td>
+</tr>
+{% endfor %}
         </tbody>
     </table>
     </div>

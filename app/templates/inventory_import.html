@@ -15,24 +15,35 @@
     </form>
 </div>
 
-
 <div class="card form-card">
     <p class="section-label">UPLOAD INVENTORY</p>
     <h3>Select Inventory File</h3>
 
     <p class="muted-text">
         Supported formats: CSV and Excel (.xlsx).
-        Nothing will be added to inventory during this preview.
+        Nothing is added until the file is validated and you confirm the import.
     </p>
 
     {% if error %}
     <p class="status status-danger">{{ error }}</p>
     {% endif %}
 
+    {% if import_errors %}
+    <div class="status status-danger">
+        <strong>Import problems:</strong>
+        <ul>
+            {% for problem in import_errors %}
+            <li>{{ problem }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <form
         method="post"
         action="/inventory/import/preview"
         enctype="multipart/form-data"
+        class="stack-form"
     >
         <div>
             <label>Inventory File</label>
@@ -49,7 +60,6 @@
         </div>
     </form>
 </div>
-
 
 {% if preview %}
 
@@ -80,7 +90,7 @@
         >
 
         <div class="table-scroll">
-            <table>
+            <table class="mobile-card-table">
                 <thead>
                     <tr>
                         <th>Uploaded Column</th>
@@ -90,14 +100,14 @@
 
                 <tbody>
                     {% for header in preview.headers %}
-                    {% set suggested = preview.mapping.get(header) %}
+                    {% set suggested = preview.mapping.get(loop.index0) %}
 
                     <tr>
-                        <td>
+                        <td data-label="Uploaded Column">
                             <strong>{{ header }}</strong>
                         </td>
 
-                        <td>
+                        <td data-label="DreiTrack Field">
                             <select name="map_{{ loop.index0 }}">
                                 <option value="">Ignore this column</option>
 
@@ -117,28 +127,22 @@
             </table>
         </div>
 
-
         <div class="form-grid">
-
             <div>
                 <label>Default Category</label>
-
                 <input
                     type="text"
                     name="default_category"
                     value="Imported"
                     required
                 >
-
                 <p class="muted-text">
                     Used when the spreadsheet does not provide a category.
                 </p>
             </div>
 
-
             <div>
                 <label>Default Storage Location</label>
-
                 <select
                     name="default_storage_location_id"
                     required
@@ -154,19 +158,16 @@
                     Used when the spreadsheet does not provide a storage location.
                 </p>
             </div>
-
         </div>
 
-
         <div class="form-grid-action">
-            <button type="button" disabled>
-                Import will be enabled after validation is added
+            <button type="submit">
+                Import {{ preview.total_rows }} Row(s)
             </button>
         </div>
 
     </form>
 </div>
-
 
 <div class="card table-card">
     <div class="table-card-header">
@@ -179,6 +180,10 @@
             Showing up to 25 rows
         </span>
     </div>
+
+    <p class="muted-text">
+        On smaller screens, swipe sideways to inspect wide spreadsheet previews.
+    </p>
 
     <div class="table-scroll">
         <table>

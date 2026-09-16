@@ -72,23 +72,60 @@
 <section class="card table-card">
     <div class="table-card-header"><div><p class="section-label">LEDGER</p><h3>Movement History</h3></div></div>
     <div class="table-scroll">
-        <table>
+        <table class="mobile-card-table">
             <thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Location</th><th>Reason</th><th>Asset</th><th>Recorded By</th><th>Reference</th></tr></thead>
             <tbody>
             {% for movement in movements %}
                 <tr>
-                    <td>{{ movement.movement_date.strftime('%d %b %Y %H:%M') }}</td>
-                    <td>{{ movement.transaction_type }}</td>
-                    <td>{{ movement.sku }}<br><strong>{{ movement.item_name }}</strong></td>
-                    <td>{% if movement.transaction_type == 'IN' %}+{{ movement.quantity }}{% elif movement.transaction_type == 'OUT' %}-{{ movement.quantity }}{% else %}{{ movement.quantity }}{% endif %}</td>
-                    <td>{{ movement.location_name }}</td>
-                    <td>{{ movement.reason }}</td>
-                    <td>{{ movement.asset_name }}</td>
-                    <td>{{ movement.actor or '-' }}</td>
-                    <td>{{ movement.reference or '-' }}</td>
-                </tr>
+    <td data-label="Date">
+        {{ movement.movement_date.strftime('%d %b %Y %H:%M') }}
+    </td>
+
+    <td data-label="Type">
+        {{ movement.transaction_type }}
+    </td>
+
+    <td data-label="Item">
+        {{ movement.sku }}<br>
+        <strong>{{ movement.item_name }}</strong>
+    </td>
+
+    <td data-label="Quantity">
+        {% if movement.transaction_type == 'IN' %}
+            +{{ movement.quantity }}
+        {% elif movement.transaction_type == 'OUT' %}
+            -{{ movement.quantity }}
+        {% else %}
+            {{ movement.quantity }}
+        {% endif %}
+    </td>
+
+    <td data-label="Location">
+        {{ movement.location_name }}
+    </td>
+
+    <td data-label="Reason">
+        {{ movement.reason }}
+    </td>
+
+    <td data-label="Asset">
+        {{ movement.asset_name }}
+    </td>
+
+    <td data-label="Recorded By">
+        {{ movement.actor or '-' }}
+    </td>
+
+    <td data-label="Reference">
+        {{ movement.reference or '-' }}
+    </td>
+</tr>
             {% else %}
-                <tr><td colspan="9">No stock movements recorded yet.</td></tr>
+                <tr class="mobile-table-empty">
+    <td colspan="9">
+        No stock movements recorded yet.
+    </td>
+</tr>
             {% endfor %}
             </tbody>
         </table>

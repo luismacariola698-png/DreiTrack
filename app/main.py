@@ -35,7 +35,7 @@ BASE_DIR = Path(__file__).resolve().parent
 app = FastAPI(
     title='DreiTrack',
     description='Private Company Physical Inventory, Procurement & Asset Management System',
-    version='0.4.2'
+    version='0.4.3'
 )
 app.mount('/static', StaticFiles(directory=str(BASE_DIR / 'static')), name='static')
 templates = Jinja2Templates(directory=str(BASE_DIR / 'templates'))
@@ -46,10 +46,8 @@ UNSAFE_HTTP_METHODS = {'POST', 'PUT', 'PATCH', 'DELETE'}
 async def private_network_security(request: Request, call_next):
     """Reject public-source traffic and obvious cross-site browser writes.
 
-    DreiTrack v0.4.1 is a private-LAN build. Real Uvicorn clients arrive with a
-    numeric IP address, so public numeric addresses are rejected at the app
-    layer in addition to the Windows Firewall rule installed by the LAN setup
-    helper.
+    DreiTrack is a private-LAN build. Real Uvicorn clients arrive with a numeric IP address, so public numeric addresses are rejected at the app
+    layer in addition to the Windows Firewall rule installed by the LAN setup helper.
     """
     client_host = request.client.host if request.client is not None else None
     if not is_allowed_private_client(client_host):
